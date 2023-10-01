@@ -38,8 +38,6 @@ def popular_bd_megasena():
       res = cur.execute("SELECT sorteio FROM megasena where sorteio = :sorteio", {"sorteio": numero})
       
       if res.fetchone() is None:
-        print(u"Inserindo o concurso número {numero} no banco de dados".format(numero = numero))
-
         concurso = MegaSena(numero)
         lista_dezenas = concurso.listaDezenas()  
         if len(lista_dezenas) > 0:
@@ -64,6 +62,7 @@ def popular_bd_megasena():
         cur.execute("INSERT INTO megasena VALUES(?, ?, ?, ?, ?, ?, ?, ?)", jogo)
         con.commit()
         concursos_inseridos += 1
+        print(u"Concurso número {numero} gravado no banco de dados".format(numero = numero))
       else:
         print(u"Concurso número {numero} já existe no banco de dados".format(numero = numero))
     except:
