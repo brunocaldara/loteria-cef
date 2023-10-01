@@ -1,11 +1,12 @@
 import os
 import json
 from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy, session
 from sqlalchemy.sql import text
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 database_name = "loteria.sqlite"
+versao_api = '/api/v1'
 
 db = SQLAlchemy()
 
@@ -57,8 +58,8 @@ app = create_app()
 def check():
     return 'Flask is working'    
 
-@app.route('/v1/megasena', methods=["GET"])
-def get_megasena():
+@app.route('{versao_api}/megasena/resultados'.format(versao_api=versao_api), methods=["GET"])
+def resultados_megasena():
   try:
     retorno = []
     sorteio = request.args.get('sorteio')
@@ -70,7 +71,6 @@ def get_megasena():
        retorno.append(jogo_json)
     else: 
       jogo = Megasena.query.get(sorteio) 
-      print(jogo)
       if jogo is None:
         raise Exception(u"Jogo não encontrado")
       jogo_json = jogo.serialize()
@@ -90,6 +90,41 @@ def get_megasena():
       mimetype='application/json'
     )
     return response
+  
+@app.route('{versao_api}/megasena/numeros-contados'.format(versao_api=versao_api), methods=["GET"])
+def numeros_contados_megasena():
+  try: 
+    numeros = {}
+    for n in range(1,61):
+      numeros[n] = 0
+
+    for numero_coluna in range(1,7):
+      coluna = 'dezena{numero_coluna}'.format(numero_coluna=numero_coluna)
+
+      for numero, valor in numeros.items():
+        resultado = db.session.execute(text('select count({coluna}) from megasena where {coluna} = {numero}'.format(coluna=coluna, numero=numero))).scalar()
+        numeros[numero] = valor + resultado
+    
+    retorno_ordenado = sorted(numeros.items(), key=lambda x:x[1], reverse=True)
+
+    retorno = []
+    for chave, valor in retorno_ordenado:
+      retorno.append({chave : valor}) 
+
+    response = app.response_class(
+      response=json.dumps(retorno),
+      status=200,
+      mimetype='application/json'
+    )
+    return response 
+  except Exception as e:
+    print(e)
+    response = app.response_class(
+      response=json.dumps({'msgErro': str(e)}),
+      status=400,
+      mimetype='application/json'
+    )
+    return response 
     
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=9999, debug=True)
