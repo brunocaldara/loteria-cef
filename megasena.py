@@ -1,11 +1,13 @@
 import sqlite3
 from datetime import datetime
+import time
 from loteria_caixa import MegaSena
 
-database_name = "loteria.sqlite"
+nome_bd = "loteria.sqlite"
+tempo = 60 * 60 * 6
 
 def criar_bd():
-  con = sqlite3.connect(database_name)
+  con = sqlite3.connect(nome_bd)
   cur = con.cursor()
   cur.execute("""
     CREATE TABLE IF NOT EXISTS megasena(
@@ -22,7 +24,7 @@ def criar_bd():
   con.close()
 
 def abrir_bd():
-  return sqlite3.connect(database_name)  
+  return sqlite3.connect(nome_bd)  
 
 def popular_bd_megasena():
   concurso_atual = MegaSena()
@@ -71,12 +73,12 @@ def popular_bd_megasena():
   con.close()
   print("Total de concursos inseridos: {total}".format(total = concursos_inseridos)) 
 
-criar_bd()
-popular_bd_megasena()
-
-
-#concurso = MegaSena()
-#print(type(concurso.listaDezenas()))
-#print(concurso.numero())
-#print(concurso.dataApuracao())
-                            
+while True:
+  hora_inicio = datetime.now()
+  criar_bd()
+  popular_bd_megasena()
+  hora_termino = datetime.now()
+  print(u'Início: {}'.format(hora_inicio))
+  print(u'Término: {}'.format(hora_termino))
+  print(u'Duração: {}'.format(hora_termino - hora_inicio))
+  time.sleep(tempo)

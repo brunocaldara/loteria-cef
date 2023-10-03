@@ -1,12 +1,16 @@
 import os
 import json
-from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy, session
+import datetime
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 database_name = "loteria.sqlite"
 versao_api = '/api/v1'
+#token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTY5NjM1MTUzNCwianRpIjoiMmI1M2NiNjktYjQ4MS00MWI4LWExNTctYmEwZjM3MDBhY2E4IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6ImJydW5vY2FsZGFyYUBnbWFpbC5jb20iLCJuYmYiOjE2OTYzNTE1MzQsImV4cCI6NDg1MDM4MzUzNH0.GV-2TM_nlFOD6eMZzzOgFAx1sz5bbRLDFvZLv4mchXE"
 
 db = SQLAlchemy()
 
@@ -16,8 +20,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] =\
             'sqlite:///' + os.path.join(basedir, database_name)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    #db = SQLAlchemy(app)
 
     with app.app_context():
         db.init_app(app)
@@ -53,12 +55,23 @@ class Megasena(db.Model):
     }
 
 app = create_app()
+
+# Setup the Flask-JWT-Extended extension
+app.config["JWT_SECRET_KEY"] = "JwJ84Y#4^XsJJpQiv2!3"
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(weeks=5215)
+jwt = JWTManager(app)
    
 @app.route('/')
 def check():
-    return 'Flask is working'    
+    return 'Flask is working'  
+
+# @app.route("/token", methods=["GET"])
+# def login():
+#   access_token = create_access_token(identity='brunocaldara@gmail.com')
+#   return jsonify(access_token=access_token)  
 
 @app.route('{versao_api}/megasena/resultados'.format(versao_api=versao_api), methods=["GET"])
+@jwt_required()
 def resultados_megasena():
   try:
     retorno = []
@@ -92,6 +105,7 @@ def resultados_megasena():
     return response
   
 @app.route('{versao_api}/megasena/numeros-contados'.format(versao_api=versao_api), methods=["GET"])
+@jwt_required()
 def numeros_contados_megasena():
   try: 
     numeros = {}
