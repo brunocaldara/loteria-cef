@@ -76,14 +76,18 @@ def resultados_megasena():
   try:
     retorno = []
     sorteio = request.args.get('sorteio')
-    if sorteio is None:
+    if sorteio is None or sorteio == '' or sorteio.upper() == 'NULL':
       jogos = Megasena.query.order_by(text("sorteio desc")).all()
 
       for jogo in jogos:
        jogo_json = jogo.serialize()
        retorno.append(jogo_json)
     else: 
-      jogo = Megasena.query.get(sorteio) 
+      if sorteio.isdigit():
+        jogo = Megasena.query.get(sorteio) 
+      elif sorteio.upper() == 'ULTIMO':
+        jogo = Megasena.query.order_by(text("sorteio desc")).first()
+        
       if jogo is None:
         raise Exception(u"Jogo não encontrado")
       jogo_json = jogo.serialize()
